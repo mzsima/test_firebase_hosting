@@ -29,7 +29,7 @@ class InnerListCard extends StatelessWidget {
       children: [
         ListTile(
           title: Padding(
-            padding: const EdgeInsetsDirectional.all(10.0),
+            padding: const EdgeInsets.all(10.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

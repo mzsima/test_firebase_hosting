@@ -15,6 +15,7 @@ jobs:
         with:
           flutter-version: '2.0.5'
       - run: flutter pub get
+      - run: flutter test --platform chrome
       - run: flutter build web
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
