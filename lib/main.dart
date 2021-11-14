@@ -1,104 +1,87 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_hosting_test/model/diary.dart';
+import 'package:firebase_hosting_test/screens/get_started_page.dart';
+import 'package:firebase_hosting_test/screens/login_page.dart';
+import 'package:firebase_hosting_test/screens/main_page.dart';
+import 'package:firebase_hosting_test/screens/page_not_found.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final userDiaryDataStream = FirebaseFirestore.instance
+      .collection('diaries')
+      .snapshots()
+      .map((diaries) {
+    return diaries.docs.map((diary) {
+      return Diary.fromDocument(diary);
+    }).toList();
+  });
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+    return MultiProvider(
+      providers: [
+        StreamProvider(
+            create: (context) => FirebaseAuth.instance.authStateChanges(),
+            initialData: null),
+        StreamProvider<List<Diary>>(
+            create: (context) => userDiaryDataStream, initialData: [])
+      ],
+      child: MaterialApp(
+        title: 'YARIKIRI β',
+        theme: ThemeData(
+          visualDensity: VisualDensity.adaptivePlatformDensity,
+          primarySwatch: Colors.green,
+        ),
+        initialRoute: '/',
+        onGenerateRoute: (settings) {
+          return MaterialPageRoute(builder: (context) {
+            return RouteController(settingsName: settings.name!);
+          });
+        },
+        onUnknownRoute: (settings) => MaterialPageRoute(
+          builder: (context) => PageNotFound(),
+        ),
       ),
-      home: const MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+class RouteController extends StatelessWidget {
+  final String settingsName;
 
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  String loginUserEmail = "";
-  String loginUserPassword = "";
-  String infoText = "";
-
+  const RouteController({Key? key, required this.settingsName})
+      : super(key: key);
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child:Container(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                decoration: const InputDecoration(labelText: "メールアドレス"),
-                onChanged: (String value) {
-                  setState(() {
-                    loginUserEmail = value;
-                  });
-                },
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: "パスワード"),
-                obscureText: true,
-                onChanged: (String value) {
-                  setState(() {
-                    loginUserPassword = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: () async {
-                  try {
-                    // メール/パスワードでログイン
-                    final FirebaseAuth auth = FirebaseAuth.instance;
-                    final UserCredential result =
-                        await auth.signInWithEmailAndPassword(
-                      email: loginUserEmail,
-                      password: loginUserPassword,
-                    );
-                    // ログインに成功した場合
-                    final User user = result.user!;
-                    setState(() {
-                      infoText = "ログインOK：${user.email}";
-                    });
-                  } catch (e) {
-                    // ログインに失敗した場合
-                    setState(() {
-                      infoText = "ログインNG：${e.toString()}";
-                    });
-                  }
-                },
-                child: const Text("ログイン"),
-              ),
-            const SizedBox(height: 8,),
-            Text(infoText)
-          ],
-          ))
-      ) // This trailing comma makes auto-formatting nicer for build methods.
-    );
+    final userSignedIn = Provider.of<User?>(context) != null;
+    final notSignedInGotoMain = !userSignedIn && settingsName == '/main';
+
+    if (settingsName == '/' && !userSignedIn) {
+      return GettingStartedPage();
+    } else if (settingsName == '/main' && notSignedInGotoMain) {
+      return LoginPage();
+    } else if (settingsName == '/login' || notSignedInGotoMain) {
+      return LoginPage();
+    } else if (userSignedIn) {
+      return MainPage();
+    } else {
+      return PageNotFound();
+    }
   }
 }
