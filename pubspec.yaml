@@ -19,6 +19,7 @@ version: 1.0.0+1
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=2.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -39,12 +40,9 @@ dependencies:
   firebase_core: ^1.10.0
   firebase_auth: ^3.2.0
   firebase_storage: ^10.1.0
-  syncfusion_flutter_datepicker: ^19.3.53
-  intl: ^0.17.0
-  image_picker_web: any
-  mime_type: any
-  provider: any
-  delayed_display: any
+
+  flutter_riverpod: 1.0.0-dev.10
+  riverpod: 1.0.0-dev.10
 
 dev_dependencies:
   flutter_test:
